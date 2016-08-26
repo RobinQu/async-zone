@@ -13,5 +13,9 @@
     "eslint": "^3.3.1",
     "mocha": "^3.0.2",
     "rcfiles": "^1.1.2"
+  },
+  "dependencies": {
+    "async-hook": "^1.6.0",
+    "debug": "^2.2.0"
   }
 }
