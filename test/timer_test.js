@@ -19,16 +19,16 @@ describe('Timers', function () {
 
   it('should work with setInterval', function (done) {
     const zone = new Zone();
-    const handler = function () {
-      expect(Zone.current.parent).to.equal(zone);
-      Zone.current.set('i', Zone.current.get('i') + 1);
-      if(Zone.current.get('i') === 3) {
-        done();
-      }
-    };
     zone.fork().run(function () {
       Zone.current.set('i', 0);
-      setInterval(handler);
+      const timmer = setInterval(function () {
+        expect(Zone.current.parent).to.equal(zone);
+        Zone.current.set('i', Zone.current.get('i') + 1);
+        if(Zone.current.get('i') === 3) {
+          clearTimeout(timmer);
+          done();
+        }
+      });
     });
   });
 
