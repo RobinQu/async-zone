@@ -10,7 +10,7 @@ describe('fs', function () {
 
   class TestFile {
     constructor() {
-      this.data = crypto.randomBytes();
+      this.data = crypto.randomBytes(20);
       this.path = path.join(process.env.TMPDIR, Date.now() + '.tmp');
       fs.writeFileSync(this.path, this.data);
     }
@@ -21,32 +21,38 @@ describe('fs', function () {
 
   }
 
-  const run = function (cb) {
-    return new Promise(function (resolve) {
-      Zone.current.fork().run(function () {
-        const secret = Math.random();
-        Zone.current.set('secret', secret);
-        if(cb) {
-          cb(null, secret);
-        }
-        resolve(secret);
-      });
-    });
-
-  };
-
   it('should work fs.truncate', function (done) {
-    run().then(function (secret) {
+    Zone.current.fork().run(function () {
+      const secret = Math.random();
+      Zone.current.set('secret', secret);
       const file = TestFile.get();
       fs.truncate(file.path, 1, function (e) {
         if(e) {
           done(e);
         }
-        expect(fs.statsSync(file.path).size).to.equal(1);
+        expect(fs.statSync(file.path).size).to.equal(1);
         expect(Zone.current.get('secret')).to.equal(secret);
         done();
       });
-    }).catch(done);
+    });
+  });
+
+  it('should work with fs.ftruncate', function (done) {
+    Zone.current.fork().run(function () {
+      const secret = Math.random();
+      Zone.current.set('secret', secret);
+      const file = TestFile.get();
+      const fd = fs.openSync(file.path, 'w');
+      fs.ftruncate(fd, 1, function (e) {
+        fs.closeSync(fd);
+        if(e) {
+          done(e);
+        }
+        expect(fs.statSync(file.path).size).to.equal(1);
+        expect(Zone.current.get('secret')).to.equal(secret);
+        done();
+      });
+    });
   });
 
 });

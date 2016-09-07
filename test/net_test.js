@@ -6,23 +6,20 @@ const Zone = require('../lib/zone');
 
 describe('net', function () {
 
-  it.only('should work with net.Server', function (done) {
+  it('should work with net.Server', function (done) {
     const zone = new Zone({name: 'zone1'});
     zone.set('secret', 123);
-    const handler = zone.wrap(function (c) {
-      process._rawDebug('1111');
+    const handler = function (c) {
       expect(Zone.current.get('secret')).to.equal(123);
-      c.on('data', zone.wrap(function () {
-        process._rawDebug('!!!!!!', Zone.current);
+      c.on('data', function () {
         expect(Zone.current.get('secret')).to.equal(123);
         c.end();
-      }));
+      });
       c.on('end', function () {
-        process._rawDebug('on end!!', Zone.current.get('secret'));
         expect(Zone.current.get('secret')).to.equal(123);
         done();
       });
-    });
+    };
     const server = zone.run(function () {
       return net.createServer(handler);
     });
@@ -31,6 +28,7 @@ describe('net', function () {
     const zone2 = new Zone({name: 'zone2'});
     zone2.set('secret', 456);
     const request = zone2.wrap(function () {
+      // make sure request happens in zone2
       expect(Zone.current.get('secret')).to.equal(456);
       const client = net.connect(server.address().port, function () {
         expect(Zone.current.get('secret')).to.equal(456);
@@ -42,7 +40,11 @@ describe('net', function () {
     });
 
     // start
-    server.listen(request);
+    zone.run(function () {
+      // make sure 'connection' event handlers are called in the scope of zone1
+      server.listen(request);
+    });
+
   });
 
 });

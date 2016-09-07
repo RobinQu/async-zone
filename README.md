@@ -26,3 +26,8 @@ class Zone {
   static get current();
 }
 ```
+
+
+## Issues
+
+* The callback of `net.createServer` will be run in root zone, if not wrapped. Child zones will inherit from zones from parent handle if possible.
